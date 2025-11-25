@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>bookmyroom – Вход</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+    <header class="app__header">
+        <h1>bookmyroom</h1>
+        <div class="user-info">
+            <span>Авторизация</span>
+        </div>
+    </header>
+
+    <main class="app__main">
+        <section class="card">
+            <h2>Вход / Регистрация</h2>
+            <div class="tabs">
+                <button class="tab tab--active" data-tab="login">Вход</button>
+                <button class="tab" data-tab="register">Регистрация</button>
+            </div>
+            <div id="login-form" class="form form--active">
+                <label>Email
+                    <input type="email" id="login-email">
+                </label>
+                <label>Пароль
+                    <input type="password" id="login-password">
+                </label>
+                <button id="login-submit" class="btn">Войти</button>
+            </div>
+            <div id="register-form" class="form">
+                <label>Email
+                    <input type="email" id="register-email">
+                </label>
+                <label>Пароль
+                    <input type="password" id="register-password">
+                </label>
+                <button id="register-submit" class="btn btn--secondary">Зарегистрироваться</button>
+            </div>
+            <div id="auth-message" class="message"></div>
+            <div class="hint">
+                После успешного входа вы будете перенаправлены на страницу выбора комнат.
+            </div>
+        </section>
+    </main>
+
+    <footer class="app__footer">
+        API endpoint: <code id="api-base-label"></code>
+    </footer>
+</div>
+
+<script src="auth.js"></script>
+</body>
+</html>

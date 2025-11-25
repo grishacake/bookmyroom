@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>bookmyroom – Комнаты</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+    <header class="app__header">
+        <h1>bookmyroom</h1>
+        <div id="user-info" class="user-info">
+            <span id="user-email"></span>
+            <span id="user-role"></span>
+            <button id="logout-btn" class="btn btn--secondary">Выйти</button>
+        </div>
+    </header>
+
+    <main class="app__main">
+        <section class="card">
+            <h2>Комнаты и бронирования</h2>
+            <div class="layout">
+                <div class="layout__sidebar">
+                    <div class="toolbar">
+                        <button id="reload-rooms" class="btn btn--ghost">Обновить список</button>
+                    </div>
+                    <ul id="rooms-list" class="list"></ul>
+                    <div id="rooms-message" class="message"></div>
+                </div>
+
+                <div class="layout__content">
+                    <div id="room-details" class="card card--inner hidden">
+                        <h3 id="room-title">Комната</h3>
+                        <div id="room-meta" class="list-item__meta"></div>
+
+                        <div id="admin-room-form" class="toolbar hidden">
+                            <label>Название
+                                <input type="text" id="admin-room-name">
+                            </label>
+                            <label>Описание
+                                <input type="text" id="admin-room-desc">
+                            </label>
+                            <label>Вместимость
+                                <input type="number" id="admin-room-capacity" min="1">
+                            </label>
+                            <label>
+                                Активна
+                                <input type="checkbox" id="admin-room-active">
+                            </label>
+                            <button id="admin-save-room" class="btn btn--secondary">Сохранить</button>
+                            <button id="admin-delete-room" class="btn btn--ghost">Удалить</button>
+                        </div>
+                    </div>
+
+                    <div id="room-bookings" class="card card--inner hidden">
+                        <h3>Бронирования выбранной комнаты</h3>
+                        <div class="toolbar">
+                            <label>Начало (RFC3339)
+                                <input type="text" id="booking-start" placeholder="2025-01-01T10:00:00Z">
+                            </label>
+                            <label>Окончание (RFC3339)
+                                <input type="text" id="booking-end" placeholder="2025-01-01T12:00:00Z">
+                            </label>
+                            <button id="create-booking" class="btn">Забронировать</button>
+                        </div>
+                        <ul id="bookings-list" class="list"></ul>
+                        <div id="bookings-message" class="message"></div>
+                    </div>
+
+                    <div id="admin-panel" class="card card--inner hidden">
+                        <h3>Создать новую комнату (admin)</h3>
+                        <div class="toolbar">
+                            <label>Название
+                                <input type="text" id="admin-new-room-name">
+                            </label>
+                            <label>Описание
+                                <input type="text" id="admin-new-room-desc">
+                            </label>
+                            <label>Вместимость
+                                <input type="number" id="admin-new-room-capacity" min="1" value="4">
+                            </label>
+                            <button id="admin-create-room" class="btn btn--secondary">Создать</button>
+                        </div>
+                        <div class="hint">
+                            Первого администратора нужно назначить вручную в БД:
+                            <code>UPDATE users SET role = 'admin' WHERE email = '...';</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app__footer">
+        API endpoint: <code id="api-base-label"></code>
+    </footer>
+</div>
+
+<script src="rooms.js"></script>
+</body>
+</html>
