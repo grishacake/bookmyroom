@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>bookmyroom – Комната</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+    <header class="app__header">
+        <h1><a href="/rooms.html" class="link-plain">bookmyroom</a></h1>
+        <div id="user-info" class="user-info">
+            <span id="user-email"></span>
+            <span id="user-role"></span>
+            <button id="logout-btn" class="btn btn--secondary">Выйти</button>
+        </div>
+    </header>
+
+    <main class="app__main">
+        <section class="card">
+            <div id="room-view" class="room-view">
+                <div class="room-view__left">
+                    <img id="room-photo" class="room-view__photo" src="" alt="Фото комнаты">
+                </div>
+                <div class="room-view__right">
+                    <h2 id="room-title">Комната</h2>
+                    <div id="room-meta" class="room-meta"></div>
+                    <div id="room-status" class="room-status"></div>
+
+                    <div id="admin-room-form" class="toolbar hidden">
+                        <label>Название
+                            <input type="text" id="admin-room-name">
+                        </label>
+                        <label>Описание
+                            <input type="text" id="admin-room-desc">
+                        </label>
+                        <label>Вместимость
+                            <input type="number" id="admin-room-capacity" min="1">
+                        </label>
+                        <label>Фото (URL)
+                            <input type="text" id="admin-room-photo">
+                        </label>
+                        <label>
+                            Активна
+                            <input type="checkbox" id="admin-room-active">
+                        </label>
+                        <button id="admin-save-room" class="btn btn--secondary">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Бронирования</h3>
+            <div class="toolbar">
+                <label>Начало
+                    <input type="datetime-local" id="booking-start-local">
+                </label>
+                <label>Окончание
+                    <input type="datetime-local" id="booking-end-local">
+                </label>
+                <button id="create-booking" class="btn">Забронировать</button>
+            </div>
+            <ul id="bookings-list" class="list"></ul>
+            <div id="bookings-message" class="message"></div>
+        </section>
+    </main>
+
+    <footer class="app__footer">
+        API endpoint: <code id="api-base-label"></code>
+    </footer>
+</div>
+
+<script src="room.js"></script>
+</body>
+</html>

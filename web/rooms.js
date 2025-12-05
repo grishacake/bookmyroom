@@ -137,7 +137,10 @@ async function loadRooms() {
             li.appendChild(left);
             li.appendChild(right);
 
-            li.addEventListener("click", () => selectRoom(room));
+            li.addEventListener("click", () => {
+                window.location.href = `/room.html?id=${room.id}`;
+            });
+            
             list.appendChild(li);
         });
         showMessage("rooms-message", rooms.length === 0 ? "Нет комнат" : "");
@@ -146,33 +149,25 @@ async function loadRooms() {
     }
 }
 
-function selectRoom(room) {
-    selectedRoom = room;
+function localInputToRFC3339(str) {
+    if (!str) return "";
+    // Браузер интерпретирует как локальное время
+    const dt = new Date(str);
+    return dt.toISOString(); // RFC3339 с Z для API
+}
 
-    const detailsCard = document.getElementById("room-details");
-    const bookingsCard = document.getElementById("room-bookings");
-
-    detailsCard.classList.remove("hidden");
-    bookingsCard.classList.remove("hidden");
-
-    document.getElementById("room-title").textContent = `Комната #${room.id} ${room.name}`;
-    document.getElementById("room-meta").textContent =
-        `capacity=${room.capacity}${room.description ? " • " + room.description : ""}` +
-        (room.is_active ? "" : " • (inactive)");
-
-    // admin form
-    const adminForm = document.getElementById("admin-room-form");
-    if (currentUser && currentUser.role === "admin") {
-        adminForm.classList.remove("hidden");
-        document.getElementById("admin-room-name").value = room.name;
-        document.getElementById("admin-room-desc").value = room.description || "";
-        document.getElementById("admin-room-capacity").value = room.capacity;
-        document.getElementById("admin-room-active").checked = room.is_active;
-    } else {
-        adminForm.classList.add("hidden");
-    }
-
-    loadRoomBookings(room.id);
+// apiStr: "2025-12-01T10:00:00Z" или с +03:00
+function formatLocalDateTime(apiStr) {
+    if (!apiStr) return "";
+    const dt = new Date(apiStr);
+    // Локальное отображение без явной таймзоны
+    return dt.toLocaleString("ru-RU", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 }
 
 async function loadRoomBookings(roomId) {

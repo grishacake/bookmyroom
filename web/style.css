@@ -253,3 +253,46 @@ input:focus {
     display: none !important;
 }
 
+.link-plain {
+    color: inherit;
+    text-decoration: none;
+}
+
+.link-plain:hover {
+    text-decoration: underline;
+}
+
+.room-view {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.room-view__left {
+    flex: 0 0 320px;
+}
+
+.room-view__photo {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px;
+    border: 1px solid #111827;
+    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    background: #020617;
+}
+
+.room-view__right {
+    flex: 1;
+}
+
+.room-meta {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.room-status {
+    margin-top: 4px;
+    font-size: 12px;
+}

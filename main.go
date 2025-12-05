@@ -141,6 +141,7 @@ func main() {
 
 	// Публичный просмотр комнат и расписаний
 	r.Get("/api/rooms", app.handleListRooms)
+	r.Get("/api/rooms/{roomID}", app.handleGetRoom)
 	r.Get("/api/rooms/{roomID}/bookings", app.handleRoomBookings)
 
 	// Защищенные маршруты
@@ -189,7 +190,7 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 
 func readJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Плохой JSON"})
 		return false
 	}
 	return true
@@ -210,13 +211,13 @@ func (a *App) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
 		if header == "" {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "missing Authorization header"})
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Отсутствует заголовок авторизации"})
 			return
 		}
 
 		parts := strings.SplitN(header, " ", 2)
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid Authorization header"})
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Недопустимый заголовок авторизации"})
 			return
 		}
 
@@ -226,7 +227,7 @@ func (a *App) authMiddleware(next http.Handler) http.Handler {
 			return a.JWTSecret, nil
 		})
 		if err != nil || !token.Valid {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid token"})
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Токен не найден"})
 			return
 		}
 
@@ -243,7 +244,7 @@ func adminOnlyMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, ok := r.Context().Value(userCtxKey).(*AuthUser)
 		if !ok || u == nil || u.Role != "admin" {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "admin access required"})
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "Требуется доступ администратора"})
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -265,7 +266,7 @@ func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	if req.Email == "" || req.Password == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "email and password are required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Требуется указать адрес электронной почты и пароль"})
 		return
 	}
 
@@ -283,9 +284,9 @@ func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if strings.Contains(err.Error(), "unique") {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "user with this email already exists"})
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Пользователь уже существует"})
 		} else {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		}
 		return
 	}
@@ -305,7 +306,7 @@ func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	if req.Email == "" || req.Password == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "email and password are required"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Требуется указать адрес электронной почты и пароль"})
 		return
 	}
 
@@ -323,7 +324,7 @@ func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, sql.ErrNoRows) {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		} else {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		}
 		return
 	}
@@ -345,7 +346,7 @@ func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString(a.JWTSecret)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to sign token"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Токен не существует"})
 		return
 	}
 
@@ -357,7 +358,7 @@ func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleListRooms(w http.ResponseWriter, r *http.Request) {
 	rows, err := a.DB.Query(`SELECT id, name, description, capacity, photo_url, is_active, created_at FROM rooms ORDER BY id`)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		return
 	}
 	defer rows.Close()
@@ -366,13 +367,39 @@ func (a *App) handleListRooms(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var room Room
 		if err := rows.Scan(&room.ID, &room.Name, &room.Description, &room.Capacity, &room.PhotoURL, &room.IsActive, &room.CreatedAt); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 			return
 		}
 		rooms = append(rooms, room)
 	}
 
 	writeJSON(w, http.StatusOK, rooms)
+}
+
+func (a *App) handleGetRoom(w http.ResponseWriter, r *http.Request) {
+	roomID, err := parseIDParam(r, "roomID")
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid room id"})
+		return
+	}
+
+	var room Room
+	err = a.DB.QueryRow(
+		`SELECT id, name, description, capacity, photo_url, is_active, created_at
+         FROM rooms
+         WHERE id = $1`,
+		roomID,
+	).Scan(&room.ID, &room.Name, &room.Description, &room.Capacity, &room.PhotoURL, &room.IsActive, &room.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "room not found"})
+		} else {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, room)
 }
 
 func (a *App) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
@@ -394,7 +421,7 @@ func (a *App) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	).Scan(&id)
 
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		return
 	}
 
@@ -404,7 +431,7 @@ func (a *App) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleUpdateRoom(w http.ResponseWriter, r *http.Request) {
 	roomID, err := parseIDParam(r, "roomID")
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid room id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "ID комнаты не найдено"})
 		return
 	}
 
@@ -419,7 +446,7 @@ func (a *App) handleUpdateRoom(w http.ResponseWriter, r *http.Request) {
 		req.Name, req.Description, req.Capacity, req.PhotoURL, roomID,
 	)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		return
 	}
 
@@ -429,13 +456,13 @@ func (a *App) handleUpdateRoom(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 	roomID, err := parseIDParam(r, "roomID")
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid room id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "ID комнаты не найдено"})
 		return
 	}
 
 	_, err = a.DB.Exec(`DELETE FROM rooms WHERE id = $1`, roomID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		return
 	}
 
@@ -445,7 +472,7 @@ func (a *App) handleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleRoomBookings(w http.ResponseWriter, r *http.Request) {
 	roomID, err := parseIDParam(r, "roomID")
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid room id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "ID комнаты не найдено"})
 		return
 	}
 
@@ -457,7 +484,7 @@ func (a *App) handleRoomBookings(w http.ResponseWriter, r *http.Request) {
 		roomID,
 	)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 		return
 	}
 	defer rows.Close()
@@ -466,7 +493,7 @@ func (a *App) handleRoomBookings(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var b Booking
 		if err := rows.Scan(&b.ID, &b.RoomID, &b.UserID, &b.StartTime, &b.EndTime, &b.Status, &b.CreatedAt); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "db error"})
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Ошибка БД"})
 			return
 		}
 		res = append(res, b)
@@ -480,7 +507,7 @@ func (a *App) handleRoomBookings(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleCreateBooking(w http.ResponseWriter, r *http.Request) {
 	user := getAuthUser(r)
 	if user == nil {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Неавторизованный пользователь"})
 		return
 	}
 
@@ -496,16 +523,16 @@ func (a *App) handleCreateBooking(w http.ResponseWriter, r *http.Request) {
 
 	start, err := time.Parse(time.RFC3339, req.StartTime)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid start_time"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Начало не распознано"})
 		return
 	}
 	end, err := time.Parse(time.RFC3339, req.EndTime)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid end_time"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Окончание не распознано"})
 		return
 	}
 	if !end.After(start) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "end_time must be after start_time"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Окончание должно быть после начала"})
 		return
 	}
 
